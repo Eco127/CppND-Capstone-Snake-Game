@@ -1,12 +1,23 @@
 #include "game.h"
 #include <iostream>
 #include "SDL.h"
+#include <thread>
+#include <chrono>
+#include <future>
+
+  // new 
+void TimerThread(bool *poisoned) {
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    *poisoned = false;
+}
 
 Game::Game(std::size_t grid_width, std::size_t grid_height)
     : snake(grid_width, grid_height),
       engine(dev()),
       random_w(0, static_cast<int>(grid_width - 1)),
-      random_h(0, static_cast<int>(grid_height - 1)) {
+      random_h(0, static_cast<int>(grid_height - 1)), 
+      dis(0, 10) 
+{ // new
   PlaceFood();
 }
 
@@ -23,9 +34,9 @@ void Game::Run(Controller const &controller, Renderer &renderer,
     frame_start = SDL_GetTicks();
 
     // Input, Update, Render - the main game loop.
-    controller.HandleInput(running, snake);
-    Update();
-    renderer.Render(snake, food);
+    controller.HandleInput(running, snake, *this /*new*/);
+    Update(renderer /*new*/);
+    renderer.Render(snake, food, &_poisoned/*new*/);
 
     frame_end = SDL_GetTicks();
 
@@ -47,8 +58,10 @@ void Game::Run(Controller const &controller, Renderer &renderer,
     if (frame_duration < target_frame_duration) {
       SDL_Delay(target_frame_duration - frame_duration);
     }
-  }
+  } 
 }
+
+
 
 void Game::PlaceFood() {
   int x, y;
@@ -65,7 +78,7 @@ void Game::PlaceFood() {
   }
 }
 
-void Game::Update() {
+void Game::Update(Renderer& renderer /*modified*/) {
   if (!snake.alive) return;
 
   snake.Update();
@@ -80,6 +93,14 @@ void Game::Update() {
     // Grow snake and increase speed.
     snake.GrowBody();
     snake.speed += 0.02;
+  
+    // new
+    if(dis(gen) <= 2){
+      _poisoned = true;
+      // resolves 5 seconds later
+      std::thread poisonTimer(TimerThread, &_poisoned);
+      poisonTimer.detach();
+    }
   }
 }
 
