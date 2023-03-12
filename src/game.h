@@ -15,19 +15,27 @@ class Game {
   int GetScore() const;
   int GetSize() const;
 
+  //new
+  friend class Controller;
+  
  private:
   Snake snake;
   SDL_Point food;
+  
+  //new
+  bool _poisoned;
 
   std::random_device dev;
   std::mt19937 engine;
   std::uniform_int_distribution<int> random_w;
   std::uniform_int_distribution<int> random_h;
+  std::uniform_int_distribution<int> dis;  //new
+  std::mt19937 gen;  //new
 
   int score{0};
 
   void PlaceFood();
-  void Update();
+  void Update(Renderer& renderer /*new*/);
 };
 
 #endif
